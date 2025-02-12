@@ -2,6 +2,7 @@
 
 
 #include "AINavigation/Public/Enemy.h"
+#include "TimerManager.h"
 #include "AIController.h"
 #include "Navigation/PathFollowingComponent.h"
 
@@ -10,7 +11,6 @@ AEnemy::AEnemy()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
 }
 
 // Called when the game starts or when spawned
@@ -19,30 +19,64 @@ void AEnemy::BeginPlay()
 	Super::BeginPlay();
 
 	EnemyController = Cast<AAIController>(GetController());
-	if (EnemyController && PatrolTarget)
-	{
-		FAIMoveRequest MoveRequest = FAIMoveRequest(PatrolTarget);
-		MoveRequest.SetAcceptanceRadius(20.f);
+	CurrentIndex = 0;
 
-		FNavPathSharedPtr NavPath;
-		
-		EnemyController->MoveTo(MoveRequest, &NavPath);
+	PatrolTarget = UpdateSelectedTarget();
+	Move(PatrolTarget);
+}
 
-		DrawDebugSphere(GetWorld(), PatrolTarget->GetActorLocation(), 10.f, 18, FColor::Red);
-	}
+bool AEnemy::InTargetRange(AActor* Target, double Range)
+{
+	if (Target == nullptr) return false;
+	
+	const double DistanceToTarget = (Target->GetActorLocation() - GetActorLocation()).Size();
+	
+	return DistanceToTarget <= Range;
 }
 
 // Called every frame
 void AEnemy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
+	if (InTargetRange(PatrolTarget, PatrolRange))
+	{
+		PatrolTarget = UpdateSelectedTarget();
 
+		GetWorldTimerManager().SetTimer(PatrolTimer, this, &AEnemy::PatrolTimerFinished, 5.f);
+	}
 }
 
 // Called to bind functionality to input
 void AEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
 }
 
+void AEnemy::PatrolTimerFinished()
+{
+	Move(PatrolTarget);
+}
+
+void AEnemy::Move(AActor* Target)
+{
+	if (EnemyController == nullptr || Target == nullptr) return;
+
+	FAIMoveRequest MoveRequest;
+	MoveRequest.SetGoalActor(Target);
+	MoveRequest.SetAcceptanceRadius(20.f);
+	EnemyController->MoveTo(MoveRequest);
+        
+	DrawDebugSphere(GetWorld(), Target->GetActorLocation(), 10.f, 18, FColor::Green);
+}
+
+AActor* AEnemy::UpdateSelectedTarget()
+{
+	const int32 NumberOfPatrolTargets = PatrolTargetArray.Num();
+
+	if (NumberOfPatrolTargets == 0) return nullptr;
+	AActor* NewTarget  = PatrolTargetArray[CurrentIndex];
+	CurrentIndex = (CurrentIndex + 1) % NumberOfPatrolTargets;
+	
+	return NewTarget;
+}
