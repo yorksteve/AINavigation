@@ -6,6 +6,8 @@
 #include "GameFramework/Character.h"
 #include "Enemy.generated.h"
 
+class UPawnSensingComponent;
+
 UCLASS()
 class AINAVIGATION_API AEnemy : public ACharacter
 {
@@ -28,6 +30,9 @@ public:
 	UPROPERTY(EditAnywhere, Category="AI Navigation")
 	double PatrolRange = 200.f;
 
+	UPROPERTY(EditAnywhere, Category="AI Navigation")
+	UPawnSensingComponent* PawnSensingComponent;
+
 	FTimerHandle PatrolTimer;
 
 protected:
@@ -44,6 +49,9 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	void PatrolTimerFinished();
+
+	UFUNCTION()
+	void PawnSeen(APawn* SeenPawn);
 
 private:
 	void Move(AActor* Target);

@@ -5,12 +5,17 @@
 #include "TimerManager.h"
 #include "AIController.h"
 #include "Navigation/PathFollowingComponent.h"
+#include "Perception/PawnSensingComponent.h"
 
 // Sets default values
 AEnemy::AEnemy()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	
+	PawnSensingComponent = CreateDefaultSubobject<UPawnSensingComponent>(TEXT("PawnSensingComponent"));
+	PawnSensingComponent->SightRadius = 200.f;
+	PawnSensingComponent->SetPeripheralVisionAngle(45.f);
 }
 
 // Called when the game starts or when spawned
@@ -23,6 +28,8 @@ void AEnemy::BeginPlay()
 
 	PatrolTarget = UpdateSelectedTarget();
 	Move(PatrolTarget);
+	
+	PawnSensingComponent->OnSeePawn.AddDynamic(this, &AEnemy::PawnSeen);
 }
 
 bool AEnemy::InTargetRange(AActor* Target, double Range)
@@ -56,6 +63,11 @@ void AEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 void AEnemy::PatrolTimerFinished()
 {
 	Move(PatrolTarget);
+}
+
+void AEnemy::PawnSeen(APawn* SeenPawn)
+{
+	UE_LOG(LogTemp, Warning, TEXT("PawnSeen"));
 }
 
 void AEnemy::Move(AActor* Target)
