@@ -4,8 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "AgentStates.h"
 #include "Enemy.generated.h"
 
+enum class EAgentState : uint8;
 class UPawnSensingComponent;
 
 UCLASS()
@@ -33,7 +35,15 @@ public:
 	UPROPERTY(EditAnywhere, Category="AI Navigation")
 	UPawnSensingComponent* PawnSensingComponent;
 
+	UPROPERTY(EditAnywhere, Category="AI Navigation")
+	float MinPatrolWait = 2.f;
+
+	UPROPERTY(EditAnywhere, Category="AI Navigation")
+	float MaxPatrolWait = 7.f;
+
 	FTimerHandle PatrolTimer;
+
+	EAgentState AgentState = EAgentState::EAS_Patrolling;
 
 protected:
 	// Called when the game starts or when spawned
@@ -59,4 +69,8 @@ private:
 	AActor* UpdateSelectedTarget();
 
 	int32 CurrentIndex = 0;
+
+	void CheckPatrolTarget();
+
+	float GetRandomDelay();
 };

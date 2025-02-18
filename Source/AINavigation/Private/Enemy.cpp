@@ -4,6 +4,7 @@
 #include "AINavigation/Public/Enemy.h"
 #include "TimerManager.h"
 #include "AIController.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Navigation/PathFollowingComponent.h"
 #include "Perception/PawnSensingComponent.h"
 
@@ -45,13 +46,13 @@ bool AEnemy::InTargetRange(AActor* Target, double Range)
 void AEnemy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
-	if (InTargetRange(PatrolTarget, PatrolRange))
-	{
-		PatrolTarget = UpdateSelectedTarget();
 
-		GetWorldTimerManager().SetTimer(PatrolTimer, this, &AEnemy::PatrolTimerFinished, 5.f);
+	if (AgentState == EAgentState::EAS_Patrolling)
+	{
+		CheckPatrolTarget();
 	}
+	
+	
 }
 
 // Called to bind functionality to input
@@ -91,4 +92,19 @@ AActor* AEnemy::UpdateSelectedTarget()
 	CurrentIndex = (CurrentIndex + 1) % NumberOfPatrolTargets;
 	
 	return NewTarget;
+}
+
+void AEnemy::CheckPatrolTarget()
+{
+	if (InTargetRange(PatrolTarget, PatrolRange))
+	{
+		PatrolTarget = UpdateSelectedTarget();
+
+		GetWorldTimerManager().SetTimer(PatrolTimer, this, &AEnemy::PatrolTimerFinished, GetRandomDelay());
+	}
+}
+
+float AEnemy::GetRandomDelay()
+{
+	return UKismetMathLibrary::RandomFloatInRange(MinPatrolWait, MaxPatrolWait);
 }
