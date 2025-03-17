@@ -25,12 +25,18 @@ public:
 	UPROPERTY(EditInstanceOnly, Category="AI Navigation")
 	AActor* PatrolTarget;
 
+	UPROPERTY(EditInstanceOnly, Category="AI Navigation")
+	AActor* ChaseTarget;
+
 	// Array of patrol targets
 	UPROPERTY(EditInstanceOnly, Category="AI Navigation")
 	TArray<AActor*> PatrolTargetArray;
 
 	UPROPERTY(EditAnywhere, Category="AI Navigation")
 	double PatrolRange = 200.f;
+
+	UPROPERTY(EditAnywhere, Category="AI Navigation")
+	double ChaseRange = 1000.f;
 
 	UPROPERTY(EditAnywhere, Category="AI Navigation")
 	UPawnSensingComponent* PawnSensingComponent;
@@ -71,6 +77,8 @@ private:
 	int32 CurrentIndex = 0;
 
 	void CheckPatrolTarget();
+
+	void CheckChaseTarget();
 
 	float GetRandomDelay();
 };

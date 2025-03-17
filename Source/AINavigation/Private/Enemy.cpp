@@ -4,6 +4,7 @@
 #include "AINavigation/Public/Enemy.h"
 #include "TimerManager.h"
 #include "AIController.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Navigation/PathFollowingComponent.h"
 #include "Perception/PawnSensingComponent.h"
@@ -27,6 +28,7 @@ void AEnemy::BeginPlay()
 	EnemyController = Cast<AAIController>(GetController());
 	CurrentIndex = 0;
 
+	GetCharacterMovement()->MaxWalkSpeed = 200.f;
 	PatrolTarget = UpdateSelectedTarget();
 	Move(PatrolTarget);
 	
@@ -51,8 +53,10 @@ void AEnemy::Tick(float DeltaTime)
 	{
 		CheckPatrolTarget();
 	}
-	
-	
+	else if (AgentState == EAgentState::EAS_Chasing)
+	{
+		CheckChaseTarget();
+	}
 }
 
 // Called to bind functionality to input
@@ -68,7 +72,15 @@ void AEnemy::PatrolTimerFinished()
 
 void AEnemy::PawnSeen(APawn* SeenPawn)
 {
-	UE_LOG(LogTemp, Warning, TEXT("PawnSeen"));
+	if (AgentState == EAgentState::EAS_Chasing) return;
+	if (SeenPawn->ActorHasTag("Player"))
+	{
+		AgentState = EAgentState::EAS_Chasing;
+		GetWorldTimerManager().ClearTimer(PatrolTimer);
+		GetCharacterMovement()->MaxWalkSpeed = 400.f;
+		ChaseTarget = SeenPawn;
+		Move(ChaseTarget);	
+	}
 }
 
 void AEnemy::Move(AActor* Target)
@@ -101,6 +113,17 @@ void AEnemy::CheckPatrolTarget()
 		PatrolTarget = UpdateSelectedTarget();
 
 		GetWorldTimerManager().SetTimer(PatrolTimer, this, &AEnemy::PatrolTimerFinished, GetRandomDelay());
+	}
+}
+
+void AEnemy::CheckChaseTarget()
+{
+	if (!InTargetRange(ChaseTarget, ChaseRange))
+	{
+		AgentState = EAgentState::EAS_Patrolling;
+		ChaseTarget = nullptr;
+		GetCharacterMovement()->MaxWalkSpeed = 200.f;
+		Move(PatrolTarget);
 	}
 }
 
