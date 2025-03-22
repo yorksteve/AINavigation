@@ -36,6 +36,9 @@ public:
 	double PatrolRange = 200.f;
 
 	UPROPERTY(EditAnywhere, Category="AI Navigation")
+	double CatchRange = 150.f;
+
+	UPROPERTY(EditAnywhere, Category="AI Navigation")
 	double ChaseRange = 1000.f;
 
 	UPROPERTY(EditAnywhere, Category="AI Navigation")
@@ -57,6 +60,8 @@ protected:
 
 	bool InTargetRange(AActor* Target, double Range);
 
+	bool InSearchingRange(FVector Location, double Range);
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -70,7 +75,9 @@ public:
 	void PawnSeen(APawn* SeenPawn);
 
 private:
-	void Move(AActor* Target);
+	void MoveToTarget(AActor* Target);
+
+	void MoveToLocation(const FVector& Location);
 
 	AActor* UpdateSelectedTarget();
 
@@ -80,5 +87,9 @@ private:
 
 	void CheckChaseTarget();
 
+	void CheckSearchTarget();
+
 	float GetRandomDelay();
+
+	FVector LastKnowLocation;
 };
